@@ -125,10 +125,10 @@ pipeline {
             }
             post {
                 always {
-                    // the default resolution when omitting `defaultBranch` is to `master`
+                    // the default resolution when omitting `targetBranch` is to `master`
                     // this is wrong in our case, so explicitly set `develop` as default
                     // TODO: does this also work for PRs with different base branch?
-                    discoverGitReferenceBuild(defaultBranch: 'develop')
+                    discoverGitReferenceBuild(targetBranch: 'develop')
                     recordIssues(skipBlames: true, enabledForFailure: true,
                         tool: checkStyle(pattern: '**/build/reports/checkstyle/*.xml'),
                         qualityGates: [
