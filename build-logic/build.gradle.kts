@@ -11,14 +11,36 @@ kotlin {
     jvmToolchain(17)
 }
 
+// Since build-logic is special we have to cheat to test/get the alternativeResolutionRepo
+val gradlePropertiesFile = file("../gradle.properties")
+val alternativeResolutionRepo = if (gradlePropertiesFile.exists()) {
+    gradlePropertiesFile.readLines().firstOrNull { line ->
+        line.startsWith("alternativeResolutionRepo=")
+    }?.substringAfter("alternativeResolutionRepo=")
+} else {
+    null
+}
+
 repositories {
     mavenCentral()
     google()  // gestalt uses an annotation package by Google
     gradlePluginPortal()
 
     maven {
-        name = "Terasology Artifactory"
-        url = URI("https://artifactory.terasology.io/artifactory/virtual-repo-live")
+        val repoViaEnv = System.getenv()["RESOLUTION_REPO"]
+        if (alternativeResolutionRepo != null) {
+            // If the user supplies an alternative repo via gradle.properties then use that
+            name = "from alternativeResolutionRepo in gradle.properties"
+            url =  URI(alternativeResolutionRepo)
+        } else if (repoViaEnv != null && repoViaEnv != "") {
+            name = "from \$RESOLUTION_REPO"
+            url = URI(repoViaEnv)
+        } else {
+            // Our default is the main virtual repo containing everything except repos for testing Artifactory itself
+            name = "Terasology Artifactory"
+            url = URI("https://artifactory.terasology.io/artifactory/virtual-repo-live")
+            //url = URI("https://artifactory.nanoware.us/artifactory/virtual-repo-live")
+        }
     }
 
     // TODO MYSTERY: As of November 7th 2021 virtual-repo-live could no longer be relied on for latest snapshots - Pro feature?
