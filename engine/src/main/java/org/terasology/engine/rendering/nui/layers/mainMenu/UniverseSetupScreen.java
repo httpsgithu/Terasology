@@ -130,7 +130,7 @@ public class UniverseSetupScreen extends CoreScreenLayer implements UISliderOnCh
      * Initialise and populate screen and add event handlers to control elements.
      * Screen elements (x - control elements):
      * - (x) World Generator Dropdown
-     * - (x) Seed Display & Edit Field
+     * - (x) Seed Display and Edit Field
      * - (x) Seed Re-Roll Button
      * - Preview Display
      * - (x) Zoom Slider
