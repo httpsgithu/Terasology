@@ -15,14 +15,14 @@ repositories {
         if (rootProject.hasProperty("alternativeResolutionRepo")) {
             // If the user supplies an alternative repo via gradle.properties then use that
             name = "from alternativeResolutionRepo property"
-            url =  URI(rootProject.properties["alternativeResolutionRepo"] as String)
+            url =  rootProject.properties["alternativeResolutionRepo"]
         } else if (repoViaEnv != null && repoViaEnv != "") {
             name = "from \$RESOLUTION_REPO"
-            url = URI(repoViaEnv)
+            url = repoViaEnv
         } else {
             // Our default is the main virtual repo containing everything except repos for testing Artifactory itself
             name = "Terasology Artifactory"
-            url = URI("https://artifactory.terasology.io/artifactory/virtual-repo-live")
+            url = "https://artifactory.terasology.io/artifactory/virtual-repo-live"
         }
     }
 }
