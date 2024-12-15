@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.terasology.gestalt.module.Module;
 import org.terasology.gestalt.module.ModuleMetadata;
-import org.terasology.gestalt.module.sandbox.API;
+import org.terasology.context.annotation.API;
 import org.terasology.gestalt.naming.Name;
 import org.terasology.gestalt.naming.Version;
 import org.terasology.unittest.ExampleClass;
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ClasspathCompromisingModuleFactoryTest {
-    static final Class<?> someClassOutsideTheModule = ClasspathCompromisingModuleFactory.class;
+    static final Class<?> SOME_CLASS_OUTSIDE_THE_MODULE = ClasspathCompromisingModuleFactory.class;
     static final String METADATA_NAME = "module.json";
 
     ClasspathCompromisingModuleFactory factory;
@@ -46,7 +46,7 @@ public class ClasspathCompromisingModuleFactoryTest {
         // and that ExampleClass is inside that directory
         assertTrue(module.getClassPredicate().test(ExampleClass.class));
         // and that this other class (in engine, not engine-test) is outside that directory.
-        assertFalse(module.getClassPredicate().test(someClassOutsideTheModule));
+        assertFalse(module.getClassPredicate().test(SOME_CLASS_OUTSIDE_THE_MODULE));
 
         // These assumptions could break if things get moved around enough.
     }
@@ -56,10 +56,14 @@ public class ClasspathCompromisingModuleFactoryTest {
     public void archiveModuleContainsClass() throws IOException {
         Module module = factory.createArchiveModule(new File("FIXME.jar"));
 
-        Class<?> someClassInTheModule = module.getModuleManifest().getTypesAnnotatedWith(API.class).iterator().next();
+        String someClassInTheModule = module.getClassIndex().getTypesAnnotatedWith(API.class.getName()).iterator().next();
 
-        assertTrue(module.getClassPredicate().test(someClassInTheModule));
-        assertFalse(module.getClassPredicate().test(someClassOutsideTheModule));
+        try {
+            assertTrue(module.getClassPredicate().test(Class.forName(someClassInTheModule)));
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        assertFalse(module.getClassPredicate().test(SOME_CLASS_OUTSIDE_THE_MODULE));
     }
 
     @Test

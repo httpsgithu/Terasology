@@ -21,7 +21,7 @@ public class EventLibrary extends ModuleClassLibrary<Event> {
     private static final Logger logger = LoggerFactory.getLogger(EventLibrary.class);
 
     public EventLibrary(ModuleEnvironment environment, ReflectFactory reflectFactory, CopyStrategyLibrary copyStrategyLibrary) {
-        super(environment, reflectFactory, copyStrategyLibrary);
+        super(() -> environment, reflectFactory, copyStrategyLibrary);
     }
 
     @Override
@@ -30,7 +30,7 @@ public class EventLibrary extends ModuleClassLibrary<Event> {
         try {
             return new EventMetadata<>(type, copyStrategies, factory, uri);
         } catch (NoSuchMethodException e) {
-            logger.error("Unable to register class {}: Default Constructor Required", type.getSimpleName(), e);
+            logger.error("Unable to register class {}: Default Constructor Required", type.getSimpleName(), e); //NOPMD
             return null;
         }
     }

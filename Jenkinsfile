@@ -12,7 +12,9 @@ properties([
     // that can't simply be turned off
     copyArtifactPermission('*'),
     // Flag for Jenkins to discard attached artifacts after x builds
-    buildDiscarder(logRotator(artifactNumToKeepStr: artifactBuildsToKeep))
+    buildDiscarder(logRotator(artifactNumToKeepStr: artifactBuildsToKeep)),
+    // configure Jenkins to abort a build if a new one is triggered for the same branch
+    disableConcurrentBuilds(abortPrevious: true)
 ])
 
 /**
@@ -34,7 +36,7 @@ properties([
 
 pipeline {
     agent {
-        label 'ts-engine && heavy && java11'
+        label 'ts-engine && heavy && java17'
     }
     stages {
         // declarative pipeline does `checkout scm` automatically when hitting first stage
@@ -123,10 +125,10 @@ pipeline {
             }
             post {
                 always {
-                    // the default resolution when omitting `defaultBranch` is to `master`
+                    // the default resolution when omitting `targetBranch` is to `master`
                     // this is wrong in our case, so explicitly set `develop` as default
                     // TODO: does this also work for PRs with different base branch?
-                    discoverGitReferenceBuild(defaultBranch: 'develop')
+                    discoverGitReferenceBuild(targetBranch: 'develop')
                     recordIssues(skipBlames: true, enabledForFailure: true,
                         tool: checkStyle(pattern: '**/build/reports/checkstyle/*.xml'),
                         qualityGates: [
@@ -137,10 +139,10 @@ pipeline {
                         ])
 
                     recordIssues(skipBlames: true, enabledForFailure: true,
-                        tools: [
-                            spotBugs(pattern: '**/build/reports/spotbugs/*.xml', useRankAsPriority: true),
-                            pmdParser(pattern: '**/build/reports/pmd/*.xml')
-                        ])
+                        tool: spotBugs(pattern: '**/build/reports/spotbugs/*.xml', useRankAsPriority: true))
+
+                    recordIssues(skipBlames: true, enabledForFailure: true,
+                        tool: pmdParser(pattern: '**/build/reports/pmd/*.xml', useRankAsPriority: true))
 
                     recordIssues(skipBlames: true, enabledForFailure: true,
                         tool: taskScanner(includePattern: '**/*.java,**/*.groovy,**/*.gradle', \
@@ -157,7 +159,7 @@ pipeline {
             }
         }
 
-        stage('Integration Tests') {
+        stage('Integration Tests (without flaky tests)') {
             steps {
                 sh './gradlew --console=plain integrationTest'
             }
@@ -172,6 +174,27 @@ pipeline {
                     // Jenkins truncates large test outputs, so archive it as well.
                     tar file: 'build/integrationTest-results.tgz', archive: true, compress: true, overwrite: true,
                         glob: '**/build/test-results/integrationTest/*.xml'
+                }
+            }
+        }
+
+        stage('Integration Tests (flaky tests only)') {
+            steps {
+                warnError("Integration Tests Failed") {  // if this errs, mark the build unstable, not failed.
+                    sh './gradlew --console=plain integrationTestFlaky'
+                }
+            }
+            post {
+                always {
+                    // Gradle generates both a HTML report of the unit tests to `build/reports/tests/*`
+                    // and XML reports to `build/test-results/*`.
+                    // We need to upload the XML reports for visualization in Jenkins.
+                    //
+                    // See https://docs.gradle.org/current/userguide/java_testing.html#test_reporting
+                    junit testResults: '**/build/test-results/integrationTestFlaky/*.xml', allowEmptyResults: true
+                    // Jenkins truncates large test outputs, so archive it as well.
+                    tar file: 'build/integrationTestFlaky-results.tgz', archive: true, compress: true, overwrite: true,
+                        glob: '**/build/test-results/integrationTestFlaky/*.xml'
                 }
             }
         }

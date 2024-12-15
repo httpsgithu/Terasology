@@ -4,6 +4,7 @@ package org.terasology.engine.rendering.dag;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.terasology.context.annotation.IndexInherited;
 import org.terasology.engine.context.Context;
 import org.terasology.engine.core.SimpleUri;
 import org.terasology.engine.core.module.ModuleManager;
@@ -17,6 +18,7 @@ import org.terasology.gestalt.naming.Name;
 import org.terasology.nui.properties.Range;
 
 @RegisterSystem
+@IndexInherited
 public abstract class ModuleRendering {
     protected static final Logger logger = LoggerFactory.getLogger(ModuleRendering.class);
 
@@ -118,9 +120,9 @@ public abstract class ModuleRendering {
         // At this stage it's unclear what should be done in this circumstances as I (manu3d) do not know what
         // the effects of using an incomplete FrameBuffer are. Throw an exception? Live with visual artifacts?
         if (fbo.getStatus() == FBO.Status.INCOMPLETE) {
-            logger.error("FBO " + fboConfig.getName() + " is incomplete. Look earlier in the log for details.");
+            logger.error("FBO {} is incomplete. Look earlier in the log for details.", fboConfig.getName()); //NOPMD
         } else if (fbo.getStatus() == FBO.Status.UNEXPECTED) {
-            logger.error("FBO " + fboConfig.getName() + " has generated an unexpected status code. Look earlier in the log for details.");
+            logger.error("FBO {} has generated an unexpected status code. Look earlier in the log for details.", fboConfig.getName()); //NOPMD
         }
         return fbo;
     }
