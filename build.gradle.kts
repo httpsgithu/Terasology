@@ -13,10 +13,22 @@ buildscript {
         google()
         gradlePluginPortal()
 
+        // required to provide runtime dependencies to build-logic.
         maven {
-            // required to provide runtime dependencies to build-logic.
-            name = "Terasology Artifactory"
-            url = uri("https://artifactory.terasology.io/artifactory/virtual-repo-live")
+            val repoViaEnv = System.getenv()["RESOLUTION_REPO"]
+            if (rootProject.hasProperty("alternativeResolutionRepo")) {
+                // If the user supplies an alternative repo via gradle.properties then use that
+                name = "from alternativeResolutionRepo property"
+                // Fun Gradle/Kotlin-ism: a general import at the top of a class used in a buildscript block won't help
+                url =  java.net.URI(rootProject.properties["alternativeResolutionRepo"] as String)
+            } else if (repoViaEnv != null && repoViaEnv != "") {
+                name = "from \$RESOLUTION_REPO"
+                url = java.net.URI(repoViaEnv)
+            } else {
+                // Our default is the main virtual repo containing everything except repos for testing Artifactory itself
+                name = "Terasology Artifactory"
+                url = java.net.URI("https://artifactory.terasology.io/artifactory/virtual-repo-live")
+            }
         }
 
         // TODO MYSTERY: As of November 7th 2011 virtual-repo-live could no longer be relied on for latest snapshots - Pro feature?

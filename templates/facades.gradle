@@ -11,8 +11,19 @@ repositories {
 
     // MovingBlocks Artifactory instance for libs not readily available elsewhere plus our own libs
     maven {
-        name "Terasology Artifactory"
-        url "https://artifactory.terasology.io/artifactory/repo"
+        def repoViaEnv = System.getenv()["RESOLUTION_REPO"]
+        if (rootProject.hasProperty("alternativeResolutionRepo")) {
+            // If the user supplies an alternative repo via gradle.properties then use that
+            name = "from alternativeResolutionRepo property"
+            url =  URI(rootProject.properties["alternativeResolutionRepo"] as String)
+        } else if (repoViaEnv != null && repoViaEnv != "") {
+            name = "from \$RESOLUTION_REPO"
+            url = URI(repoViaEnv)
+        } else {
+            // Our default is the main virtual repo containing everything except repos for testing Artifactory itself
+            name = "Terasology Artifactory"
+            url = URI("https://artifactory.terasology.io/artifactory/virtual-repo-live")
+        }
     }
 }
 
